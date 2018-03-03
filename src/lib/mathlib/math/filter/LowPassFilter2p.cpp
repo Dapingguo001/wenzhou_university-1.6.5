@@ -96,4 +96,3 @@ float LowPassFilter2p::reset(float sample)
 }
 
 } // namespace math
-

@@ -1072,7 +1072,7 @@ start(enum MS5611_BUS busid, enum MS56XX_DEVICE_TYPES device_type)
 			// not the one that is asked for
 			continue;
 		}
-
+		
 		started = started | start_bus(bus_options[i], device_type);
 	}
 

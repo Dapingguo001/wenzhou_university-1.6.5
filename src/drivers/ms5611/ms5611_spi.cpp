@@ -122,7 +122,7 @@ MS5611_spi_interface(ms5611::prom_u &prom_buf, uint8_t busnum)
 #ifdef PX4_SPIDEV_EXT_BARO
 		return new MS5611_SPI(busnum, (spi_dev_e)PX4_SPIDEV_EXT_BARO, prom_buf);
 #else
-		return nullptr;
+		return nullptr;	
 #endif
 	}
 

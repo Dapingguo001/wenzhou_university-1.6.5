@@ -147,6 +147,7 @@ set(config_module_list
 	lib/controllib
 	lib/mathlib
 	lib/mathlib/math/filter
+	lib/mathlib/math/butterworthfliter
 	lib/rc
 	lib/ecl
 	lib/external_lgpl

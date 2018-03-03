@@ -70,6 +70,7 @@
 
 #include <board_config.h>
 #include <mathlib/math/filter/LowPassFilter2p.hpp>
+#include <mathlib/math/butterworthfliter/ButterworthLowPassFliter.hpp>
 #include <lib/conversion/rotation.h>
 
 /* SPI protocol address bits */
@@ -200,7 +201,7 @@
 #define LSM303D_ACCEL_DEFAULT_RANGE_G			16
 #define LSM303D_ACCEL_DEFAULT_RATE			800
 #define LSM303D_ACCEL_DEFAULT_ONCHIP_FILTER_FREQ	50
-#define LSM303D_ACCEL_DEFAULT_DRIVER_FILTER_FREQ	30
+#define LSM303D_ACCEL_DEFAULT_DRIVER_FILTER_FREQ	25
 #define LSM303D_ACCEL_MAX_OUTPUT_RATE			280
 
 #define LSM303D_MAG_DEFAULT_RANGE_GA			2
@@ -303,6 +304,10 @@ private:
 	math::LowPassFilter2p	_accel_filter_x;
 	math::LowPassFilter2p	_accel_filter_y;
 	math::LowPassFilter2p	_accel_filter_z;
+
+	math::ButterworthLowPassFliter   _accel_butterworth_fliter_x;
+	math::ButterworthLowPassFliter   _accel_butterworth_fliter_y;
+	math::ButterworthLowPassFliter   _accel_butterworth_fliter_z;
 
 	Integrator		_accel_int;
 
@@ -1597,6 +1602,10 @@ LSM303D::measure()
 		perf_count(_bad_values);
 		_constant_accel_count = 0;
 	}
+
+	x_in_new = _accel_butterworth_fliter_x.butterworth_lowpass_fliter(x_in_new,800,20);
+	y_in_new = _accel_butterworth_fliter_y.butterworth_lowpass_fliter(y_in_new,800,20);
+	z_in_new = _accel_butterworth_fliter_z.butterworth_lowpass_fliter(z_in_new,800,20);
 
 	_last_accel[0] = x_in_new;
 	_last_accel[1] = y_in_new;

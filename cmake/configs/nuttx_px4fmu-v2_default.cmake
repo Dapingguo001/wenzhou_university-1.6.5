@@ -54,6 +54,7 @@ set(config_module_list
 	drivers/lis3mdl
 	#drivers/iridiumsbd
 	drivers/ulanding
+	drivers/serial_read
 
 	#
 	# System commands
@@ -101,6 +102,7 @@ set(config_module_list
 	#modules/uavcan
 	modules/land_detector
 	modules/camera_feedback
+	modules/serial_read_app
 
 	#
 	# Estimation modules
@@ -142,6 +144,7 @@ set(config_module_list
 	lib/controllib
 	lib/mathlib
 	lib/mathlib/math/filter
+	lib/mathlib/math/butterworthfliter
 	lib/ecl
 	lib/external_lgpl
 	lib/geo
