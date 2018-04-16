@@ -67,6 +67,7 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/uORB.h>
+//#include <uORB/topics/cc2500_message.h>
 
 /**
  * navigator app start / stop handling function
@@ -254,6 +255,8 @@ Navigator::task_main()
 	_param_update_sub = orb_subscribe(ORB_ID(parameter_update));
 	_vehicle_command_sub = orb_subscribe(ORB_ID(vehicle_command));
 
+//	_cc2500_update_sub = orb_advertise(ORB_ID(cc2500_message), &_cc2500_message);
+
 	/* copy all topics first time */
 	vehicle_status_update();
 	vehicle_land_detected_update();
@@ -309,6 +312,9 @@ Navigator::task_main()
 				global_pos_available_once = true;
 			}
 		}
+
+//		_cc2500_message.cc2500_send_location_data_packet = true;//_cc2500_send_location_data_packet;
+//		orb_publish(ORB_ID(cc2500_message), _cc2500_update_sub, &_cc2500_message);
 
 		perf_begin(_loop_perf);
 

@@ -54,7 +54,8 @@ set(config_module_list
 	drivers/lis3mdl
 	#drivers/iridiumsbd
 	drivers/ulanding
-	drivers/serial_read
+#	drivers/serial_read
+	drivers/cc2500
 
 	#
 	# System commands
@@ -102,7 +103,8 @@ set(config_module_list
 	#modules/uavcan
 	modules/land_detector
 	modules/camera_feedback
-	modules/serial_read_app
+#	modules/serial_read_app
+	modules/rst_mission
 
 	#
 	# Estimation modules

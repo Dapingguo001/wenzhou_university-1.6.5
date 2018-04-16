@@ -1,0 +1,1 @@
+bool cc2500_send_location_data_packet

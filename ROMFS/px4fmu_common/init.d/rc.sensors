@@ -37,12 +37,12 @@ else
 		# External SPI
 		if ms5611 -S start
 		then
-		fi
+		fi	
 
 		# Internal SPI
 		if ms5611 -s start
 		then
-		fi
+		fi	
 
 		# Blacksheep telemetry
 		if bst start

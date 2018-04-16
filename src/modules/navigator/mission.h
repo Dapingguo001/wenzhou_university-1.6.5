@@ -62,6 +62,7 @@
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/uORB.h>
+#include <uORB/topics/cc2500_message.h>
 
 class Navigator;
 
@@ -274,6 +275,17 @@ private:
 		WORK_ITEM_TYPE_TRANSITON_AFTER_TAKEOFF,
 		WORK_ITEM_TYPE_MOVE_TO_LAND_AFTER_TRANSITION
 	} _work_item_type{WORK_ITEM_TYPE_DEFAULT};	/**< current type of work to do (sub mission item) */
+
+	bool _AOA_Firstinto_mission = true;
+	bool _AOA_mission_finished = false;
+	float _AOA_Turn_Angle;
+	float _AOA_Last_angle;
+	float _deltaAngle;
+	bool _cc2500_send_location_data_packet = false;
+
+	orb_advert_t    _cc2500_update_sub{nullptr};
+	cc2500_message_s    _cc2500_message;
+
 };
 
 #endif

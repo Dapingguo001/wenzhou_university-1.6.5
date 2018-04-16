@@ -57,6 +57,7 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/mission.h>
 #include <uORB/topics/mission_result.h>
+#include <uORB/topics/cc2500_message.h>
 
 Mission::Mission(Navigator *navigator, const char *name) :
 	MissionBlock(navigator, name),
@@ -144,6 +145,7 @@ Mission::on_inactive()
 void
 Mission::on_activation()
 {
+	_cc2500_update_sub = orb_advertise(ORB_ID(cc2500_message), &_cc2500_message);	
 	set_mission_items();
 }
 
@@ -181,7 +183,7 @@ Mission::on_active()
 	}
 
 	/* lets check if we reached the current mission item */
-	if (_mission_type != MISSION_TYPE_NONE && is_mission_item_reached()) {
+	if (_mission_type != MISSION_TYPE_NONE && is_mission_item_reached() && _AOA_mission_finished) {
 
 		/* If we just completed a takeoff which was inserted before the right waypoint,
 		   there is no need to report that we reached it because we didn't. */
@@ -193,6 +195,9 @@ Mission::on_active()
 			/* switch to next waypoint if 'autocontinue' flag set */
 			advance_mission();
 			set_mission_items();
+			_AOA_Turn_Angle = 0.0f;
+			_AOA_Firstinto_mission = true;
+			_AOA_mission_finished = false;
 		}
 
 	} else if (_mission_type != MISSION_TYPE_NONE && _param_altmode.get() == MISSION_ALTMODE_FOH) {
@@ -955,6 +960,7 @@ Mission::heading_sp_update()
 	    || _mission_item.nav_cmd == NAV_CMD_LAND
 	    || _mission_item.nav_cmd == NAV_CMD_VTOL_LAND
 	    || _work_item_type == WORK_ITEM_TYPE_ALIGN) {
+		_AOA_mission_finished = true;
 
 		return;
 	}
@@ -1023,8 +1029,48 @@ Mission::heading_sp_update()
 		}
 	}
 
+	if(_waypoint_position_reached && _mission_item.nav_cmd != NAV_CMD_TAKEOFF && !_AOA_mission_finished)
+	{
+		pos_sp_triplet->current.yawspeed = 30.0f/180.0f*3.1415926f;
+		pos_sp_triplet->current.yawspeed_valid = true;
+		pos_sp_triplet->current.type = 7;
+		float cog = _navigator->get_vstatus()->is_rotary_wing ? _navigator->get_global_position()->yaw : atan2f(
+			_navigator->get_global_position()->vel_e,
+			_navigator->get_global_position()->vel_n);
+
+		if(_AOA_Firstinto_mission)
+		{
+			_AOA_Last_angle = cog;
+			_AOA_Firstinto_mission = false;
+		}
+
+		_deltaAngle = cog - _AOA_Last_angle;
+		_AOA_Last_angle = cog;
+
+		if(_deltaAngle > 3.1415926f)
+		{
+			_deltaAngle -= 2*3.1415926f;
+		}
+		if(_deltaAngle < -3.1415926f)
+		{
+			_deltaAngle += 2*3.1415926f;
+		}
+		_AOA_Turn_Angle += _deltaAngle;
+		_cc2500_send_location_data_packet = true;
+
+		if(fabsf(2*3.1415926f - _AOA_Turn_Angle) < 2.0f/180.0f*3.1415926f)
+		{
+			_AOA_mission_finished = true;
+			pos_sp_triplet->current.yawspeed_valid = false;
+			_cc2500_send_location_data_packet = false;
+		}
+	}
 	// we set yaw directly so we can run this in parallel to the FOH update
 	_navigator->set_position_setpoint_triplet_updated();
+
+
+	_cc2500_message.cc2500_send_location_data_packet = true;//_cc2500_send_location_data_packet;
+	orb_publish(ORB_ID(cc2500_message), _cc2500_update_sub, &_cc2500_message);
 }
 
 void

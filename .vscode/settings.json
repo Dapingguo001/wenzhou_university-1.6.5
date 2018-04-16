@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "utility": "cpp",
+        "array": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "bitset": "cpp",
+        "chrono": "cpp",
+        "initializer_list": "cpp",
+        "functional": "cpp"
+    },
+    "git.ignoreLimitWarning": true
+}

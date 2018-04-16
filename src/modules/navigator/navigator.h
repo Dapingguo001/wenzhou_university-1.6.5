@@ -69,6 +69,7 @@
 #include <uORB/topics/vehicle_gps_position.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/uORB.h>
+//#include <uORB/topics/cc2500_message.h>
 
 /**
  * Number of navigation modes that need on_active/on_inactive calls
@@ -335,5 +336,10 @@ private:
 	 * Publish the mission result so commander and mavlink know what is going on
 	 */
 	void		publish_mission_result();
+
+//	bool _cc2500_send_location_data_packet = false;
+	
+//	orb_advert_t    _cc2500_update_sub{nullptr};
+//	cc2500_message_s    _cc2500_message;
 };
 #endif

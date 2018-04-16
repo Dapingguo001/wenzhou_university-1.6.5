@@ -426,6 +426,7 @@ then
 		fi
 	else
 		gps start
+		cc2500 start
 	fi
 
 	set DATAMAN_OPT ""
@@ -1054,6 +1055,8 @@ then
 	# Start the navigator
 	#
 	navigator start
+
+	rst_mission start
 
 	#
 	# Generic setup (autostart ID not found)

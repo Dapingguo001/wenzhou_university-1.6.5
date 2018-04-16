@@ -106,6 +106,7 @@ set(config_module_list
 	modules/uavcan
 	modules/land_detector
 	modules/camera_feedback
+	modules/rst_mission
 
 	#
 	# Estimation modules (EKF/ SO3 / other filters)
