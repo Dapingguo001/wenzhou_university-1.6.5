@@ -8,6 +8,9 @@
 #include <uORB/topics/cc2500_message.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/home_position.h>
+#include <uORB/topics/mission_result.h>
+#include <uORB/topics/control_state.h>
+#include <uORB/topics/vehicle_gps_position.h>
 
 class CC2500  : public device::SPI
 {
@@ -107,18 +110,23 @@ private:
     bool _cc2500_send_location_data_packet = false;
     
     vehicle_global_position_s   _global_pos;
-    home_position_s			    _home_pos; 
+    vehicle_gps_position_s       _gps_pos;
+    home_position_s			    _home_pos;
+    mission_result_s			_mission_result; 
 
     struct location_data_packet_s{
-        float lattitude;   //纬度
-        float longtitude;  //经度
-        float altitude;    //相对高度
-        float yaw;          //航向角
-        float global_altitude; //绝对高度
+        uint32_t lattitude;   //纬度
+        uint32_t longtitude;  //经度
+        uint32_t altitude;    //相对高度
+        uint16_t yaw;          //航向角
+        uint32_t global_altitude; //绝对高度
     };
     location_data_packet_s location_data_packet;
 
     float home_position_altitude;
+
+    struct control_state_s				_ctrl_state;		/**< vehicle attitude */
+    float _yaw;
     
 };
 

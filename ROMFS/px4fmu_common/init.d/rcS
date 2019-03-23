@@ -426,7 +426,7 @@ then
 		fi
 	else
 		gps start
-		cc2500 start
+		#cc2500 start
 	fi
 
 	set DATAMAN_OPT ""

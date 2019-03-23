@@ -1029,9 +1029,9 @@ Mission::heading_sp_update()
 		}
 	}
 
-	if(_waypoint_position_reached && _mission_item.nav_cmd != NAV_CMD_TAKEOFF && !_AOA_mission_finished)
+	if((_waypoint_position_reached) && _mission_item.nav_cmd != NAV_CMD_TAKEOFF && !_AOA_mission_finished)
 	{
-		pos_sp_triplet->current.yawspeed = 30.0f/180.0f*3.1415926f;
+		pos_sp_triplet->current.yawspeed = 10.0f/180.0f*3.1415926f;
 		pos_sp_triplet->current.yawspeed_valid = true;
 		pos_sp_triplet->current.type = 7;
 		float cog = _navigator->get_vstatus()->is_rotary_wing ? _navigator->get_global_position()->yaw : atan2f(
@@ -1058,7 +1058,7 @@ Mission::heading_sp_update()
 		_AOA_Turn_Angle += _deltaAngle;
 		_cc2500_send_location_data_packet = true;
 
-		if(fabsf(2*3.1415926f - _AOA_Turn_Angle) < 2.0f/180.0f*3.1415926f)
+		if(fabsf(6*3.1415926f - _AOA_Turn_Angle) < 2.0f/180.0f*3.1415926f)
 		{
 			_AOA_mission_finished = true;
 			pos_sp_triplet->current.yawspeed_valid = false;
@@ -1069,7 +1069,7 @@ Mission::heading_sp_update()
 	_navigator->set_position_setpoint_triplet_updated();
 
 
-	_cc2500_message.cc2500_send_location_data_packet = true;//_cc2500_send_location_data_packet;
+	_cc2500_message.cc2500_send_location_data_packet = _cc2500_send_location_data_packet;
 	orb_publish(ORB_ID(cc2500_message), _cc2500_update_sub, &_cc2500_message);
 }
 

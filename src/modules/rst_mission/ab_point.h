@@ -34,20 +34,26 @@ private:
 
     struct map_projection_reference_s start_point;
  
-    uint8_t      virtual_square_width = 10;
+    uint8_t      virtual_square_width = 20;
 
-    float mission_path[16][2] = { {0,0}, {1,0}, {2,0}, {3,0},
+    float mission_path[16][2] = {{0,0}, {1,0}, {2,0}, {3,0},
                                   {3,1}, {2,1}, {1,1}, {0,1},
                                   {0,2}, {1,2}, {2,2}, {3,2},
                                   {3,3}, {2,3}, {1,3}, {0,3}};
 
-    float mission_altitude = 10.0f;
+    //float mission_path[4][2] = {{0,0},{1,0},{1,1},{0,1}};
+
+    float mission_altitude = 5.0f;
 
     int _mission_count = -1;
 
 
     int     _Pre_rocker_position;
     int     _Cur_rocker_position;
+
+    int     _Pre_aux2_rocker_position;
+    int     _Cur_aux2_rocker_position;
+
 
     bool    _Rocker_enable;
 
@@ -61,6 +67,7 @@ private:
     int             ab_point_get_waypoint_count();
     int             ab_point_update_active_mission(int dataman_id, unsigned count, int seq);
 
+    void            set_altitude();
 
 };
 

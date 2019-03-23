@@ -40,14 +40,16 @@ AB_point::run()
 {
     struct mission_item_s mission_item;
     
+        set_altitude();
         if(ab_point_Recording_waypoint())
         {
             if(_Rocker_enable && _rst_mission->get_global_position_valid())
             {
                 dm_item_t dm_item = DM_KEY_WAYPOINTS_OFFBOARD(1);
 
-                for(int i=0 ; i<16; i++)
+                for(int i=0 ; i< 4; i++)
                 {
+                    usleep(1000000);
                     _mission_count ++;
                     if(ab_point_get_waypoint_count() == 0){
         
@@ -108,9 +110,9 @@ AB_point::ab_point_takeoff_waypoint(struct mission_item_s *mission_item)
 {
     mission_item->lat = _rst_mission->get_vehicle_global_position()->lat;
     mission_item->lon = _rst_mission->get_vehicle_global_position()->lon;
-    mission_item->altitude = _rst_mission->get_home_position()->alt + mission_altitude;
+    mission_item->altitude = mission_altitude;//_rst_mission->get_home_position()->alt + mission_altitude;
     
-    mission_item->altitude_is_relative = false;
+    mission_item->altitude_is_relative = true;
     
     mission_item->nav_cmd = NAV_CMD_TAKEOFF;
     
@@ -136,15 +138,14 @@ void
 AB_point::ab_point_Navigation_waypoint(struct mission_item_s *mission_item)
 {
     double next_lat_sp;
-    double next_lon_sp;
-
+    double next_lon_sp; 
     map_projection_reproject(&start_point, virtual_square_width*mission_path[_mission_count][0],  virtual_square_width*mission_path[_mission_count][1], &next_lat_sp, &next_lon_sp);
 
     mission_item->lat = next_lat_sp;
     mission_item->lon = next_lon_sp;
-    mission_item->altitude = _rst_mission->get_home_position()->alt + mission_altitude;
+    mission_item->altitude =  mission_altitude;//_rst_mission->get_vehicle_global_position()->alt + mission_altitude;
     
-    mission_item->altitude_is_relative = false;
+    mission_item->altitude_is_relative = true;
 
     mission_item->nav_cmd = NAV_CMD_WAYPOINT;
 
@@ -222,4 +223,27 @@ AB_point::ab_point_update_active_mission(int dataman_id, unsigned count, int seq
 
 		return PX4_ERROR;
 	}
+}
+
+void
+AB_point::set_altitude()
+{
+    if(_rst_mission->get_manual_control_setpoint()->aux2 < -0.8f){
+        _Cur_aux2_rocker_position = -1;
+    }
+    if(_rst_mission->get_manual_control_setpoint()->aux2 >  0.8f){
+        _Cur_aux2_rocker_position = 1;
+    }
+
+    if(_Pre_aux2_rocker_position != _Cur_aux2_rocker_position && ((_Cur_aux2_rocker_position == -1) || (_Cur_aux2_rocker_position == 1)))
+    {
+        _Pre_aux2_rocker_position = _Cur_aux2_rocker_position;
+        mission_altitude = mission_altitude + 5.0f;
+
+        if((int)(mission_altitude) == 35)
+        {
+            mission_altitude = 5.0f;
+        }
+        mavlink_log_critical(_mavlink_log_pub,"set waypoint altitude %.2f\n",(double)mission_altitude); 
+    } 
 }

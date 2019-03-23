@@ -3,12 +3,20 @@
 #include <px4_config.h>
 #include <stm32_gpio.h>
 
+
+#include <lib/geo/geo.h>
+#include <mathlib/mathlib.h>
+
 #include <drivers/drv_hrt.h>
 #include <nuttx/config.h>
 
 #include <uORB/topics/cc2500_message.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/home_position.h>
+#include <uORB/topics/mission_result.h>
+#include <uORB/topics/control_state.h>
+#include <uORB/topics/vehicle_gps_position.h>
+
 
 extern "C" __EXPORT int cc2500_main(int argc, char *argv[]);
 
@@ -195,6 +203,16 @@ CC2500::run()
     bool cc2500_message_updated = false;
     bool global_pos_updated = false;
     bool home_position_updated = false;
+    bool mission_result__updated = false;
+    bool ctrl_state_updated = false;
+    bool gps_pos_updated = false;
+
+    char p_buf[30] = {18,1,0,1,2,3,4,5};
+    uint32_t temp32;
+    uint16_t temp16;
+    char *p;
+    math::Matrix<3, 3> _R;			/**< rotation matrix from attitude quaternions */
+    
 
     int _cc2500_message_pub = orb_subscribe(ORB_ID(cc2500_message));
     memset(&_cc2500_message, 0, sizeof(_cc2500_message));
@@ -202,9 +220,20 @@ CC2500::run()
     int global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
     memset(&_global_pos, 0, sizeof(_global_pos));
 
+    int gps_pos_sub = orb_subscribe(ORB_ID(vehicle_gps_position));
+    memset(&_gps_pos, 0, sizeof(_gps_pos));
+
     int home_pos_sub = orb_subscribe(ORB_ID(home_position));
     memset(&_home_pos, 0, sizeof(_home_pos));
 
+    int mission_result_pub = orb_subscribe(ORB_ID(mission_result));
+    memset(&_mission_result, 0, sizeof(_mission_result));
+
+    int	_ctrl_state_sub = orb_subscribe(ORB_ID(control_state));;
+    memset(&_ctrl_state, 0, sizeof(_ctrl_state));
+
+
+ //   bool flag_pwm = false;
     //char read_byte;
     while(!_task_should_exit)
     {
@@ -221,6 +250,12 @@ CC2500::run()
             orb_copy(ORB_ID(vehicle_global_position), global_pos_sub, &_global_pos);
         }
 
+        orb_check(gps_pos_sub, &gps_pos_updated);
+        if (gps_pos_updated) {
+            orb_copy(ORB_ID(vehicle_gps_position), gps_pos_sub, &_gps_pos);
+        }
+
+
         orb_check(home_pos_sub, &home_position_updated);
         if (home_position_updated) {
             orb_copy(ORB_ID(home_position), home_pos_sub, &_home_pos);
@@ -228,33 +263,97 @@ CC2500::run()
             home_position_altitude = _home_pos.alt;
         }
 
+        orb_check(mission_result_pub, &mission_result__updated);
+        if (mission_result__updated) {
+            orb_copy(ORB_ID(mission_result), mission_result_pub, &_mission_result);
+        } 
+        
+        orb_check(_ctrl_state_sub, &ctrl_state_updated);
+        
+        if (ctrl_state_updated) {
+            orb_copy(ORB_ID(control_state), _ctrl_state_sub, &_ctrl_state);
+            math::Quaternion q_att(_ctrl_state.q[0], _ctrl_state.q[1], _ctrl_state.q[2], _ctrl_state.q[3]);
+            _R = q_att.to_dcm();
+            math::Vector<3> euler_angles;
+            euler_angles = _R.to_euler();
+            _yaw = euler_angles(2);
 
-        if(global_pos_updated)
-        {
-          location_data_packet.lattitude = _global_pos.lat;
-          location_data_packet.longtitude = _global_pos.lon;
-          location_data_packet.global_altitude = _global_pos.alt;
-          location_data_packet.altitude = _global_pos.alt - home_position_altitude;
-          location_data_packet.yaw = _global_pos.yaw;
+            if(_yaw < 0)
+            {
+              _yaw = 2 * 3.1415926f + _yaw;
+            }
         }
 
-        char p_buf[30] = {18,1};
-        
-        for(int i=0 ;i < sizeof(location_data_packet_s); i++)
+
+        /*if(global_pos_updated)
         {
-          p_buf[i+2] = *((char *)(&location_data_packet) + i);
+          location_data_packet.lattitude = (uint32_t)((float)(_global_pos.lat) * 2147483648.0f / 3.1415926f);
+          location_data_packet.longtitude = (uint32_t)((float)(_global_pos.lon) * 2147483648.0f / 3.1415926f);
+          location_data_packet.global_altitude = (uint32_t)(_global_pos.alt * 100.0f);
+          location_data_packet.altitude = (uint32_t)((float)(_global_pos.alt - home_position_altitude) * 100.0f);
+          location_data_packet.yaw = (uint16_t)((_global_pos.yaw) * 65536.0f / (2.0f * 3.1415926f));
+        }*/
+        
+//        temp32 = (uint32_t)((float)(_global_pos.lon) / 180.0f * 2147483648.0f);
+
+        temp32 = (uint32_t)((float)(_gps_pos.lon / 1e7) / 180.0f * 2147483648.0f);
+        p = (char*)(&temp32);
+        for(int i=0; i<4; i++)
+        {
+          p_buf[2+i] = (*(p+i));
+        }
+
+//        temp32 = (uint32_t)((float)(_global_pos.lat) /180.0f * 2147483648.0f);
+        temp32 = (uint32_t)((float)(_gps_pos.lat / 1e7) /180.0f * 2147483648.0f);
+        p = (char*)(&temp32);
+        for(int i=0; i<4; i++)
+        {
+          p_buf[6+i] = (*(p+i));
         }
  
+        temp32 = (uint32_t)(_global_pos.alt * 100.0f);
+        p = (char*)(&temp32);
+        for(int i=0; i<4; i++)
+        {
+          p_buf[10+i] = (*(p+i));
+        }        
+
+        
+        temp16 = (uint16_t)((_yaw) * 65536.0f / (2.0f * 3.1415926f));
+        p = (char*)(&temp16);
+        p_buf[14] = *p;
+        p_buf[15] = *(p+1);
+        
+        //temp32 = (uint32_t)((float)(_global_pos.alt - home_position_altitude) * 100.0f);
+        //_mission_result.seq_reached = 2;
+
+        temp16 = (uint16_t)(_mission_result.seq_reached);
+        p = (char*)(&temp16);
+        for(int i=0; i<4; i++)
+        {
+          p_buf[16+i] = (*(p+i));
+        }    
 
         if(_cc2500_send_location_data_packet)
         {
-          RFSendPacket(p_buf,30);
+          //::printf("yuwenbin........................test.......\n");
+           RFSendPacket(p_buf,30);
         }
         
 
         //read_byte = TI_CC_SPIReadReg(TI_CCxxx0_MDMCFG2);
         //::printf("yuewenbin..........test........%d\n",read_byte);
 
+ /*       if(flag_pwm)
+        {
+          flag_pwm = false;
+          px4_arch_gpiowrite((GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN14),true);
+        }
+        else
+        {
+          flag_pwm = true;
+          px4_arch_gpiowrite((GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN14),false);
+        }*/
     }
 
 }
